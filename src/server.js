@@ -44,13 +44,6 @@ app.put("/books/updatebook/:title", async (req, res) => {
         title: req.params.title 
     });
   
-    if (!bookToUpdate) {
-      const errorResponse = {
-        message: "Book not found"
-      };
-      return res.status(404).send(errorResponse);
-    }
-  
     if (req.body.author) {
       bookToUpdate.author = req.body.author;
     }
@@ -70,23 +63,43 @@ app.put("/books/updatebook/:title", async (req, res) => {
 }); // updates the author/genre of the given book title in the search bar
 
 app.delete("/books/deletebook", async (req, res) => {
-    const bookToDelete = await Book.deleteOne({ 
-        title: req.body.title 
-    });
+    if (req.query.title) {
+        const bookToDelete = await Book.deleteOne({ title: req.query.title });
 
-    if (!bookToDelete) {
-        const errorResponse = {
-            message: "Book not found"
+        if (!bookToDelete) {
+            const errorResponse = {
+                message: "Book not found"
+            };
+            return res.status(404).send(errorResponse);
+        }
+
+        const successResponse = {
+            message: "Book successfully deleted"
         };
-        return res.status(404).send(errorResponse);
+
+        res.status(200).send(successResponse);
+    } else if (req.query.all) {
+        const allBooksDeleted = await Book.deleteMany({});
+
+        if (!allBooksDeleted) {
+            const errorResponse = {
+                message: "Error deleting all books"
+            };
+            return res.status(500).send(errorResponse);
+        }
+
+        const successResponse = {
+            message: "All books successfully deleted"
+        };
+
+        res.status(200).send(successResponse);
+    } else {
+        const errorResponse = {
+            message: "Invalid request"
+        };
+        res.status(400).send(errorResponse);
     }
-
-    const successResponse = {
-        message: "Book successfully deleted"
-    };
-
-    res.status(200).send(successResponse);
-}); // deletes a book from the database
+}); // deletes a book from the database. to delete the book the title must be in the url
 
 const port = process.env.PORT;
 app.listen(port, () => {
